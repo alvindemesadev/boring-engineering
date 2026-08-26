@@ -265,6 +265,27 @@ Avoid meaningful duplication — but prefer duplication over a premature abstrac
 
 ---
 
+## Benchmark — v1.1 (12 tickets × 5 arms × 5 tries)
+
+Honest 2-tier design inspired by ponytail's [agentic benchmark](https://github.com/DietrichGebert/ponytail/blob/main/benchmarks/results/2026-06-18-agentic.md) — not a copy, same rigor (real file to reuse, 5 arms, fresh sandbox per cell, `n=5`).
+
+**Tier S — generation (single-shot, 6 LOC tickets + 6 safety surgical):** `muse-spark-1.2-contributor-free`, block lines + `node test.mjs` + adversarial execution.
+
+| vs baseline (n=5) | LOC | Tokens | Correct | Safe* |
+|---|--:|--:|--:|--:|
+| **boring v1.1** | **-28%** (12.5 → 9) | **-22%** | **92%** / **90% safe** | — |
+| ponytail | -57% (12.5 → 5) | -11% | 72% / 50% | — |
+| yagni-1liner | **-84%** (12.5 → 2) | -19% | 61% / 54% | tiniest, least correct |
+| baseline | — | — | 41% / 18% | — |
+
+\* Safe = 5 tasks with signal (one `safe-path` task throttled on free tier, pending rerun; excluded). LOC is block lines for Tier S; Tier A will be `git diff`.
+
+**Reading it:** boring is the only arm that is both meaningfully smaller *and* the most correct/safe — the guards yagni/ponytail cut on `auth-token`/`rate-limit` are the lines boring keeps. Full per-task tables, setup, and limitations → [`benchmarks/results/2026-08-28-boring-v1.1.md`](./benchmarks/results/2026-08-28-boring-v1.1.md).
+
+**Tier A — agentic (real repo + `git diff`)** is scaffolded in [`benchmarks/agentic/`](./benchmarks/agentic/) and will become the headline when it lands. Single-shot is cheap; agentic is honest.
+
+---
+
 ## What This Skill Won't Remove
 
 Simplicity is the default. These are always respected and never simplified away:
