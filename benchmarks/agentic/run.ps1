@@ -13,13 +13,10 @@ $STAMP=Get-Date -Format "yyyyMMdd-HHmmss"
 $STAMP_DIR=Join-Path $RUNS_DIR $STAMP
 New-Item -ItemType Directory -Path $STAMP_DIR -Force | Out-Null
 
-function StripFM([string]$md){ return ($md -replace "(?s)\A---\r?\n.*?\r?\n---\r?\n","").Trim() }
-$boringRules=[IO.File]::ReadAllText((Join-Path $ROOT "../../SKILL.md"),[Text.Encoding]::UTF8) | ForEach-Object { StripFM $_ }
-$ponytailRules=[IO.File]::ReadAllText((Join-Path $ROOT "../arms/ponytail.md"),[Text.Encoding]::UTF8) | ForEach-Object { StripFM $_ }
 $arms=@(
-  @{ id="baseline"; rules="" },
-  @{ id="ponytail"; rules=$ponytailRules },
-  @{ id="boring-engineering"; rules=$boringRules }
+  @{ id="baseline"; skillSrc="" },
+  @{ id="ponytail"; skillSrc=(Join-Path $ROOT "../arms/ponytail.md") },
+  @{ id="boring-engineering"; skillSrc=(Join-Path $ROOT "../../SKILL.md") }
 )
 
 Write-Output "Tier A pilot: $($TICKETS.Count) tickets × $($arms.Count) arms × $Runs runs = $($TICKETS.Count*$arms.Count*$Runs) cells"
@@ -35,15 +32,28 @@ foreach($ticket in $TICKETS){
       Push-Location $ws
       git init -q; git config user.email "bench@boring.test"; git config user.name "bench"
       git add .; git commit -qm "baseline"
-      # inject skill as file attachment prompt
-      $promptFile=Join-Path $ws "_prompt.txt"
-      $fullPrompt=if($arm.rules){ $arm.rules + "`n`n---`n`n" + $ticket.prompt } else { $ticket.prompt }
-      [IO.File]::WriteAllText($promptFile, $fullPrompt, [Text.Encoding]::UTF8)
+      # inject skill as real skill file so the build agent discovers it (not via prompt)
+      if($arm.skillSrc){
+        $skillDir=Join-Path $ws ".opencode/skills/$($arm.id)"
+        New-Item -ItemType Directory -Path $skillDir -Force | Out-Null
+        Copy-Item $arm.skillSrc (Join-Path $skillDir "SKILL.md") -Force
+        # also copy references/assets if they exist (boring has them next to SKILL.md)
+        $skillRoot=Split-Path $arm.skillSrc -Parent
+        if($arm.id -eq "boring-engineering"){
+          $repoRoot=Join-Path $ROOT "../.."
+          if(Test-Path (Join-Path $repoRoot "references")){ Copy-Item (Join-Path $repoRoot "references") $skillDir -Recurse -Force -ErrorAction SilentlyContinue }
+          if(Test-Path (Join-Path $repoRoot "assets")){ Copy-Item (Join-Path $repoRoot "assets") $skillDir -Recurse -Force -ErrorAction SilentlyContinue }
+        }
+        git add ".opencode/skills/$($arm.id)/SKILL.md" 2>$null | Out-Null
+        git commit -qm "inject $($arm.id) skill" 2>$null
+      }
+      # ticket prompt via file attachment (skill is now discovered, not pasted)
+      $promptFile=Join-Path $ws "_ticket.txt"
+      [IO.File]::WriteAllText($promptFile, $ticket.prompt, [Text.Encoding]::UTF8)
       $out=Join-Path $ws "_events.json"
       $err=Join-Path $ws "_err.txt"
       $opencodeCmd=Join-Path $ROOT "../node_modules/.bin/opencode.cmd"
-      # agentic: build agent with tools, workspace = $ws, prompt via file attachment
-      $cmdLine = "`"$opencodeCmd`" run --agent build --format json -m $Model -f `"$promptFile`" `"Complete the ticket described in the attached file. Edit the repo in place.`" 1>`"$out`" 2>`"$err`""
+      $cmdLine = "`"$opencodeCmd`" run --agent build --format json -m $Model -f `"$promptFile`" `"Complete the ticket in the attached file. Search the codebase first, then edit the repo in place. Keep the diff minimal.`" 1>`"$out`" 2>`"$err`""
       $p=Start-Process cmd.exe -ArgumentList '/d','/s','/c',$cmdLine -PassThru -WindowStyle Hidden -WorkingDirectory $ws
       Wait-Process -Id $p.Id -Timeout $CallTimeoutSec -ErrorAction SilentlyContinue
       if(-not $p.HasExited){ taskkill /PID $p.Id /T /F 2>&1 | Out-Null }
