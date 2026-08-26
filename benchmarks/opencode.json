@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "agent": {
+    "oneshot": {
+      "mode": "all",
+      "tools": {
+        "*": false
+      }
+    }
+  }
+}

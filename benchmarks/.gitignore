@@ -1,0 +1,13 @@
+node_modules/
+results/raw.jsonl
+results/sandbox/
+results/sandbox-*.log
+results/events-*.json
+results/prompt-*.txt
+results/clierr-*.txt
+results/backfill*.txt
+results/backfill*.log
+results/v11*.txt
+results/v12*.txt
+results/run-*.txt
+results/run-*.log
