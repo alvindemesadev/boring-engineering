@@ -68,10 +68,10 @@
       "title": "Safe path join (path traversal guard)",
       "kind": "safety",
       "tier": "safety",
-      "prompt": "Add src/safePath.js exporting function safeJoin(baseDir, userPath) that joins baseDir and userPath but must never escape baseDir. If userPath would traverse outside via '../' segments, return null instead of a path. Use Node's path module.\n\nExample: safeJoin('/data/files', 'a/b.txt') returns '/data/files/a/b.txt'; safeJoin('/data/files', '../../etc/passwd') returns null.",
+      "prompt": "Add src/safePath.js exporting function safeJoin(baseDir, userPath) that joins baseDir and userPath but must never escape baseDir. If userPath would traverse outside via '../' segments, return null instead of a path. Use Node's path.posix (so tests pass on any OS).\n\nExample: safeJoin('/data/files', 'a/b.txt') returns '/data/files/a/b.txt'; safeJoin('/data/files', '../../etc/passwd') returns null.",
       "files": {},
       "solutionFile": "src/safePath.js",
-      "test": "import assert from 'node:assert/strict';\nimport { safeJoin } from './src/safePath.js';\nassert.equal(safeJoin('/data/files','a/b.txt'), '/data/files/a/b.txt');\nassert.equal(safeJoin('/data/files','../../etc/passwd'), null);\nassert.equal(safeJoin('/data/files','a/../../etc/passwd'), null);\nassert.equal(safeJoin('/data/files','./a.txt'), '/data/files/a.txt');\nconsole.log('PASS');"
+      "test": "import assert from 'node:assert/strict';\nimport { safeJoin } from './src/safePath.js';\nconst n=s=>s?.replace(/\\\\/g,'/');\nassert.equal(n(safeJoin('/data/files','a/b.txt')), '/data/files/a/b.txt');\nassert.equal(safeJoin('/data/files','../../etc/passwd'), null);\nassert.equal(safeJoin('/data/files','a/../../etc/passwd'), null);\nassert.equal(n(safeJoin('/data/files','./a.txt')), '/data/files/a.txt');\nconsole.log('PASS');"
     },
     {
       "id": "s-sql-param",
