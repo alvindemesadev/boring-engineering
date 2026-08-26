@@ -47,14 +47,16 @@ foreach($ticket in $TICKETS){
         git add ".opencode/skills/$($arm.id)/SKILL.md" 2>$null | Out-Null
         git commit -qm "inject $($arm.id) skill" 2>$null
       }
-      # ticket prompt via file attachment (skill is now discovered, not pasted)
       $promptFile=Join-Path $ws "_ticket.txt"
       [IO.File]::WriteAllText($promptFile, $ticket.prompt, [Text.Encoding]::UTF8)
       $out=Join-Path $ws "_events.json"
       $err=Join-Path $ws "_err.txt"
-      $opencodeCmd=Join-Path $ROOT "../node_modules/.bin/opencode.cmd"
-      $cmdLine = "`"$opencodeCmd`" run --agent build --format json -m $Model -f `"$promptFile`" `"Complete the ticket in the attached file. Search the codebase first, then edit the repo in place. Keep the diff minimal.`" 1>`"$out`" 2>`"$err`""
-      $p=Start-Process cmd.exe -ArgumentList '/d','/s','/c',$cmdLine -PassThru -WindowStyle Hidden -WorkingDirectory $ws
+      $env:BE_MODEL=$Model
+      $env:BE_TICKET_FILE=$promptFile
+      $env:BE_OUT=$out
+      $env:BE_ERR=$err
+      $runner=Join-Path $ROOT "runner-agentic.cmd"
+      $p=Start-Process cmd.exe -ArgumentList '/d','/s','/c',"`"$runner`"" -PassThru -WindowStyle Hidden -WorkingDirectory $ws
       Wait-Process -Id $p.Id -Timeout $CallTimeoutSec -ErrorAction SilentlyContinue
       if(-not $p.HasExited){ taskkill /PID $p.Id /T /F 2>&1 | Out-Null }
       # score git diff

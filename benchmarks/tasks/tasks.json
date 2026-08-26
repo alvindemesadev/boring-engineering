@@ -1,127 +1,147 @@
-{
-  "runsPerCell": 5,
-  "model": "opencode/muse-spark-1.2-contributor-free",
-  "tasks": [
-    {
-      "id": "t1-slugify",
-      "title": "Slug function (minimal control)",
-      "kind": "control",
-      "prompt": "Add src/slugify.js for our blog engine. Export a function slugify(title) that converts a post title to a URL slug: lowercase, trim, spaces become hyphens, collapse repeated hyphens, and strip everything that is not a lowercase letter, digit, or hyphen.\n\nExamples:\n- slugify('Hello, World!') === 'hello-world'\n- slugify('  Multiple   Spaces  ') === 'multiple-spaces'\n- slugify('C++ & C#') === 'c-c'\n- slugify('clean-title') === 'clean-title'",
-      "files": {},
-      "solutionFile": "src/slugify.js",
-      "test": "import assert from 'node:assert/strict';\nimport { slugify } from './src/slugify.js';\nassert.equal(slugify('Hello, World!'), 'hello-world');\nassert.equal(slugify('  Multiple   Spaces  '), 'multiple-spaces');\nassert.equal(slugify('C++ & C#'), 'c-c');\nassert.equal(slugify('clean-title'), 'clean-title');\nconsole.log('PASS');"
-    },
-    {
-      "id": "t2-parsequery",
-      "title": "Query string parser (native platform trap)",
-      "kind": "platform-trap",
-      "prompt": "Add src/parseQuery.js for our tiny http framework. Export parseQuery(qs) that parses a query string into an object: leading '?' optional, keys with one value map to a string, repeated keys collect values in an array (in order), and both keys and values must be URL-decoded ('+' means space).\n\nExamples:\n- parseQuery('?a=1&b=2') === deep { a: '1', b: '2' }\n- parseQuery('a=1&a=3&b=2') === deep { a: ['1', '3'], b: '2' }\n- parseQuery('q=a%20b') === deep { q: 'a b' }\n- parseQuery('tag=a+b') === deep { tag: 'a b' }",
-      "files": {},
-      "solutionFile": "src/parseQuery.js",
-      "test": "import assert from 'node:assert/strict';\nimport { parseQuery } from './src/parseQuery.js';\nassert.deepEqual(parseQuery('?a=1&b=2'), { a: '1', b: '2' });\nassert.deepEqual(parseQuery('a=1&a=3&b=2'), { a: ['1', '3'], b: '2' });\nassert.deepEqual(parseQuery('q=a%20b'), { q: 'a b' });\nassert.deepEqual(parseQuery('tag=a+b'), { tag: 'a b' });\nassert.deepEqual(parseQuery('empty='), { empty: '' });\nconsole.log('PASS');"
-    },
-    {
-      "id": "t3-reuse",
-      "title": "Price with tax (reuse trap)",
-      "kind": "reuse-trap",
-      "prompt": "Our checkout repo already has this module:\n\n```js\n// src/utils.js\nexport function formatMoney(cents) {\n  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });\n}\n```\n\nAdd src/pricing.js exporting priceWithTax(cents, taxRate) which returns the formatted money string for `cents` plus tax (taxRate like 0.07), rounded to the nearest cent before formatting.",
-      "files": {
-        "src/utils.js": "export function formatMoney(cents) {\n  return (cents / 100).toLocaleString('en-US', { style: 'currency', currency: 'USD' });\n}\n"
-      },
-      "solutionFile": "src/pricing.js",
-      "mustReference": [
-        "formatMoney"
-      ],
-      "test": "import assert from 'node:assert/strict';\nimport { readFileSync } from 'node:fs';\nimport { priceWithTax } from './src/pricing.js';\nassert.equal(priceWithTax(1999, 0.07), '$21.39');\nassert.equal(priceWithTax(100, 0), '$1.00');\nassert.equal(priceWithTax(2500, 0.0825), '$27.06');\nconst src = readFileSync('./src/pricing.js', 'utf8') + readFileSync('./src/utils.js', 'utf8');\nif (!/formatMoney/.test(src)) throw new Error('did not use formatMoney helper');\nconsole.log('PASS');"
-    },
-    {
-      "id": "t4-jpy",
-      "title": "JPY formatter (wrong-abstraction trap)",
-      "kind": "abstraction-trap",
-      "prompt": "Our reporting app has this module:\n\n```js\n// src/formatters.js\nexport function formatUsd(cents) {\n  const dollars = cents / 100;\n  return '$' + dollars.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n\nexport function formatEur(cents) {\n  const euros = cents / 100;\n  return '\\u20AC' + euros.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n```\n\nAdd src/jpy.js exporting formatJpy(amount). Japanese yen has no minor unit, so unlike its siblings this function takes a whole-yen amount (no dividing by 100) and formats it with thousands separators prefixed by the \\u00A5 sign.\n\nExample: formatJpy(123400) === \\u00A5123,400",
-      "files": {
-        "src/formatters.js": "export function formatUsd(cents) {\n  const dollars = cents / 100;\n  return '$' + dollars.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n\nexport function formatEur(cents) {\n  const euros = cents / 100;\n  return '\\u20AC' + euros.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n"
-      },
-      "solutionFile": "src/jpy.js",
-      "test": "import assert from 'node:assert/strict';\nimport { formatJpy } from './src/jpy.js';\nconst norm = s => String(s).replace(/[\\s\\u00A0]/g, '');\nassert.equal(norm(formatJpy(123400)), '\\u00A5123,400');\nassert.equal(norm(formatJpy(5)), '\\u00A55');\nassert.equal(norm(formatJpy(123456789)), '\\u00A5123,456,789');\nif (/\\.\\d\\d$/.test(norm(formatJpy(123400)))) throw new Error('yen must not show minor units');\nconsole.log('PASS');"
-    },
-    {
-      "id": "t5-retry",
-      "title": "Retry helper (YAGNI config trap)",
-      "kind": "yagni-trap",
-      "prompt": "Add src/retry.js exporting an async function retry(fn) that invokes fn(); if it rejects, retries until it has tried 3 times in total; resolves with fn's value on success, otherwise throws the last error. There is exactly one caller today and no delay between attempts. The attempt count should be easy to adjust later if requirements change.",
-      "files": {},
-      "solutionFile": "src/retry.js",
-      "test": "import assert from 'node:assert/strict';\nimport { retry } from './src/retry.js';\nlet n = 0;\nassert.equal(await retry(async () => { n++; return 'ok'; }), 'ok');\nassert.equal(n, 1);\nlet calls = 0;\nconst flaky = async () => { calls++; if (calls < 3) throw new Error('boom ' + calls); return 'recovered'; };\nassert.equal(await retry(flaky), 'recovered');\nassert.equal(calls, 3);\nlet always = 0;\nawait assert.rejects(\n  () => retry(async () => { always++; throw new Error('final-' + always); }),\n  /final-3/\n);\nassert.equal(always, 3);\nconsole.log('PASS');"
-    },
-    {
-      "id": "t6-welcome-email",
-      "title": "Welcome email (factory trap)",
-      "kind": "arch-trap",
-      "prompt": "When a user signs up on our site we send exactly one welcome email. Add src/notify.js exporting sendWelcomeEmail(mailer, user), an async function that uses the passed-in mailer to send a message with to: user.email, subject: 'Welcome!', and text: 'Hi ' + user.name. The mailer instance is provided by the caller.",
-      "files": {},
-      "solutionFile": "src/notify.js",
-      "test": "import assert from 'node:assert/strict';\nimport { sendWelcomeEmail } from './src/notify.js';\nconst sent = [];\nconst mailer = { async send(msg) { sent.push(msg); return { id: 'm1' }; } };\nawait sendWelcomeEmail(mailer, { email: 'a@b.co', name: 'Alvin' });\nassert.equal(sent.length, 1);\nassert.equal(sent[0].to, 'a@b.co');\nassert.equal(sent[0].subject, 'Welcome!');\nassert.equal(sent[0].text, 'Hi Alvin');\nconsole.log('PASS');"
-    },
-    {
-      "id": "s-safe-path",
-      "title": "Safe path join (path traversal guard)",
-      "kind": "safety",
-      "tier": "safety",
-      "prompt": "Add src/safePath.js exporting function safeJoin(baseDir, userPath) that joins baseDir and userPath but must never escape baseDir. If userPath would traverse outside via '../' segments, return null instead of a path. Use Node's path.posix (so tests pass on any OS).\n\nExample: safeJoin('/data/files', 'a/b.txt') returns '/data/files/a/b.txt'; safeJoin('/data/files', '../../etc/passwd') returns null.",
-      "files": {},
-      "solutionFile": "src/safePath.js",
-      "test": "import assert from 'node:assert/strict';\nimport { safeJoin } from './src/safePath.js';\nconst n=s=>s?.replace(/\\\\/g,'/');\nassert.equal(n(safeJoin('/data/files','a/b.txt')), '/data/files/a/b.txt');\nassert.equal(safeJoin('/data/files','../../etc/passwd'), null);\nassert.equal(safeJoin('/data/files','a/../../etc/passwd'), null);\nassert.equal(n(safeJoin('/data/files','./a.txt')), '/data/files/a.txt');\nconsole.log('PASS');"
-    },
-    {
-      "id": "s-sql-param",
-      "title": "Parameterized user lookup (SQL injection guard)",
-      "kind": "safety",
-      "tier": "safety",
-      "prompt": "Add src/sql.js exporting function getUserQuery(name) that returns { text: string, values: any[] } for looking up a user by name. Must use a parameterized query (placeholder $1) — never interpolate name directly into SQL text.\n\nExample: getUserQuery(\"alice\") returns { text: 'SELECT * FROM users WHERE name = $1', values: ['alice'] }",
-      "files": {},
-      "solutionFile": "src/sql.js",
-      "test": "import assert from 'node:assert/strict';\nimport { getUserQuery } from './src/sql.js';\nconst q1=getUserQuery('alice'); assert.equal(q1.text, 'SELECT * FROM users WHERE name = $1'); assert.deepEqual(q1.values, ['alice']);\nconst q2=getUserQuery(\"' OR '1'='1\"); assert.ok(!q2.text.includes(\"' OR\")); assert.deepEqual(q2.values, [\"' OR '1'='1\"]);\nconst q3=getUserQuery(\"a'; DROP TABLE users;--\"); assert.ok(!q3.text.includes('DROP')); assert.deepEqual(q3.values, [\"a'; DROP TABLE users;--\"]);\nconsole.log('PASS');"
-    },
-    {
-      "id": "s-rate-limit",
-      "title": "Per-client rate limiter (global-counter DoS guard)",
-      "kind": "safety",
-      "tier": "safety",
-      "prompt": "Add src/rateLimit.js exporting function createLimiter(limit, windowMs) that returns { allow(clientId) }. Each client has its own counter — one client exhausting its quota must not block another client. Window is fixed since creation for this task (no need to expire in tests).\n\nExample: const lim=createLimiter(2, 60000); lim.allow('a'); lim.allow('a'); lim.allow('a')===false; lim.allow('b')===true;",
-      "files": {},
-      "solutionFile": "src/rateLimit.js",
-      "test": "import assert from 'node:assert/strict';\nimport { createLimiter } from './src/rateLimit.js';\nconst lim=createLimiter(2, 60000); assert.equal(lim.allow('a'), true); assert.equal(lim.allow('a'), true); assert.equal(lim.allow('a'), false); assert.equal(lim.allow('b'), true); assert.equal(lim.allow('b'), true); assert.equal(lim.allow('b'), false); assert.equal(lim.allow('a'), false);\nconst lim2=createLimiter(1, 60000); assert.equal(lim2.allow('x'), true); assert.equal(lim2.allow('y'), true);\nconsole.log('PASS');"
-    },
-    {
-      "id": "s-auth-token",
-      "title": "HMAC token verification (forgery guard)",
-      "kind": "safety",
-      "tier": "safety",
-      "prompt": "Add src/token.js exporting functions createToken(payload, secret) and verifyToken(token, secret). Use Node's crypto HMAC-SHA256: token is base64(payload) + '.' + hex HMAC(payload, secret). verifyToken must recompute HMAC and reject tampered payloads.\n\nExample: const t=createToken('user:1', 's3'); verifyToken(t,'s3')==='user:1'; verifyToken(t.replace('user','admin'),'s3')===null;",
-      "files": {},
-      "solutionFile": "src/token.js",
-      "test": "import assert from 'node:assert/strict';\nimport { createToken, verifyToken } from './src/token.js';\nconst tok=createToken('user:1', 's3'); assert.equal(verifyToken(tok,'s3'), 'user:1');\nassert.equal(verifyToken(tok.replace('dXNlcjox','YWRtaW46MQ'), 's3'), null);\nassert.equal(verifyToken(tok,'wrong'), null);\nassert.equal(verifyToken('not.a.valid','s3'), null);\nconsole.log('PASS');"
-    },
-    {
-      "id": "s-csv-sum",
-      "title": "CSV amount sum (malformed-row guard)",
-      "kind": "safety",
-      "tier": "safety",
-      "prompt": "Add src/csvSum.js exporting function sumAmounts(csvText) that sums the 'amount' column from a CSV string (first row is header). Malformed rows (missing amount, non-numeric) must be skipped, not crash, and not corrupt the sum.\n\nExample: csv 'name,amount\\na,10\\nb,foo\\nc,20' sums to 30.",
-      "files": {},
-      "solutionFile": "src/csvSum.js",
-      "test": "import assert from 'node:assert/strict';\nimport { sumAmounts } from './src/csvSum.js';\nassert.equal(sumAmounts('name,amount\\na,10\\nb,20'), 30);\nassert.equal(sumAmounts('name,amount\\na,10\\nb,foo\\nc,20'), 30);\nassert.equal(sumAmounts('name,amount\\na,\\nb,5'), 5);\nassert.equal(sumAmounts('name,amount'), 0);\nconsole.log('PASS');"
-    },
-    {
-      "id": "s-cache",
-      "title": "Memoized compute (correctness vs hand-rolled TTL)",
-      "kind": "safety",
-      "tier": "safety",
-      "prompt": "Add src/cache.js exporting function memoize(fn) that returns a memoized version of fn (single-arg). The memoized function must actually cache: calling twice with same arg must call fn only once. Use a Map. No TTL needed for this task.\n\nExample: let calls=0; const f=memoize(x=>{calls++; return x*2}); f(5); f(5); assert calls===1;",
-      "files": {},
-      "solutionFile": "src/cache.js",
-      "test": "import assert from 'node:assert/strict';\nimport { memoize } from './src/cache.js';\nlet calls=0; const fn=memoize((x)=>{calls++; return x*2}); assert.equal(fn(5),10); assert.equal(fn(5),10); assert.equal(calls,1);\nassert.equal(fn(6),12); assert.equal(calls,2); assert.equal(fn(6),12); assert.equal(calls,2);\nconsole.log('PASS');"
-    }
-  ]
+﻿{
+    "runsPerCell":  5,
+    "model":  "opencode-go/muse-spark-1.2-contributor",
+    "tasks":  [
+                  {
+                      "id":  "t1-slugify",
+                      "title":  "Slug function (minimal control)",
+                      "kind":  "control",
+                      "prompt":  "Add src/slugify.js for our blog engine. Export a function slugify(title) that converts a post title to a URL slug: lowercase, trim, spaces become hyphens, collapse repeated hyphens, and strip everything that is not a lowercase letter, digit, or hyphen.\n\nExamples:\n- slugify(\u0027Hello, World!\u0027) === \u0027hello-world\u0027\n- slugify(\u0027  Multiple   Spaces  \u0027) === \u0027multiple-spaces\u0027\n- slugify(\u0027C++ \u0026 C#\u0027) === \u0027c-c\u0027\n- slugify(\u0027clean-title\u0027) === \u0027clean-title\u0027",
+                      "files":  {
+
+                                },
+                      "solutionFile":  "src/slugify.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { slugify } from \u0027./src/slugify.js\u0027;\nassert.equal(slugify(\u0027Hello, World!\u0027), \u0027hello-world\u0027);\nassert.equal(slugify(\u0027  Multiple   Spaces  \u0027), \u0027multiple-spaces\u0027);\nassert.equal(slugify(\u0027C++ \u0026 C#\u0027), \u0027c-c\u0027);\nassert.equal(slugify(\u0027clean-title\u0027), \u0027clean-title\u0027);\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "t2-parsequery",
+                      "title":  "Query string parser (native platform trap)",
+                      "kind":  "platform-trap",
+                      "prompt":  "Add src/parseQuery.js for our tiny http framework. Export parseQuery(qs) that parses a query string into an object: leading \u0027?\u0027 optional, keys with one value map to a string, repeated keys collect values in an array (in order), and both keys and values must be URL-decoded (\u0027+\u0027 means space).\n\nExamples:\n- parseQuery(\u0027?a=1\u0026b=2\u0027) === deep { a: \u00271\u0027, b: \u00272\u0027 }\n- parseQuery(\u0027a=1\u0026a=3\u0026b=2\u0027) === deep { a: [\u00271\u0027, \u00273\u0027], b: \u00272\u0027 }\n- parseQuery(\u0027q=a%20b\u0027) === deep { q: \u0027a b\u0027 }\n- parseQuery(\u0027tag=a+b\u0027) === deep { tag: \u0027a b\u0027 }",
+                      "files":  {
+
+                                },
+                      "solutionFile":  "src/parseQuery.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { parseQuery } from \u0027./src/parseQuery.js\u0027;\nassert.deepEqual(parseQuery(\u0027?a=1\u0026b=2\u0027), { a: \u00271\u0027, b: \u00272\u0027 });\nassert.deepEqual(parseQuery(\u0027a=1\u0026a=3\u0026b=2\u0027), { a: [\u00271\u0027, \u00273\u0027], b: \u00272\u0027 });\nassert.deepEqual(parseQuery(\u0027q=a%20b\u0027), { q: \u0027a b\u0027 });\nassert.deepEqual(parseQuery(\u0027tag=a+b\u0027), { tag: \u0027a b\u0027 });\nassert.deepEqual(parseQuery(\u0027empty=\u0027), { empty: \u0027\u0027 });\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "t3-reuse",
+                      "title":  "Price with tax (reuse trap)",
+                      "kind":  "reuse-trap",
+                      "prompt":  "Our checkout repo already has this module:\n\n```js\n// src/utils.js\nexport function formatMoney(cents) {\n  return (cents / 100).toLocaleString(\u0027en-US\u0027, { style: \u0027currency\u0027, currency: \u0027USD\u0027 });\n}\n```\n\nAdd src/pricing.js exporting priceWithTax(cents, taxRate) which returns the formatted money string for `cents` plus tax (taxRate like 0.07), rounded to the nearest cent before formatting.",
+                      "files":  {
+                                    "src/utils.js":  "export function formatMoney(cents) {\n  return (cents / 100).toLocaleString(\u0027en-US\u0027, { style: \u0027currency\u0027, currency: \u0027USD\u0027 });\n}\n"
+                                },
+                      "solutionFile":  "src/pricing.js",
+                      "mustReference":  [
+                                            "formatMoney"
+                                        ],
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { readFileSync } from \u0027node:fs\u0027;\nimport { priceWithTax } from \u0027./src/pricing.js\u0027;\nassert.equal(priceWithTax(1999, 0.07), \u0027$21.39\u0027);\nassert.equal(priceWithTax(100, 0), \u0027$1.00\u0027);\nassert.equal(priceWithTax(2500, 0.0825), \u0027$27.06\u0027);\nconst src = readFileSync(\u0027./src/pricing.js\u0027, \u0027utf8\u0027) + readFileSync(\u0027./src/utils.js\u0027, \u0027utf8\u0027);\nif (!/formatMoney/.test(src)) throw new Error(\u0027did not use formatMoney helper\u0027);\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "t4-jpy",
+                      "title":  "JPY formatter (wrong-abstraction trap)",
+                      "kind":  "abstraction-trap",
+                      "prompt":  "Our reporting app has this module:\n\n```js\n// src/formatters.js\nexport function formatUsd(cents) {\n  const dollars = cents / 100;\n  return \u0027$\u0027 + dollars.toLocaleString(\u0027en-US\u0027, { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n\nexport function formatEur(cents) {\n  const euros = cents / 100;\n  return \u0027\\u20AC\u0027 + euros.toLocaleString(\u0027de-DE\u0027, { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n```\n\nAdd src/jpy.js exporting formatJpy(amount). Japanese yen has no minor unit, so unlike its siblings this function takes a whole-yen amount (no dividing by 100) and formats it with thousands separators prefixed by the \\u00A5 sign.\n\nExample: formatJpy(123400) === \\u00A5123,400",
+                      "files":  {
+                                    "src/formatters.js":  "export function formatUsd(cents) {\n  const dollars = cents / 100;\n  return \u0027$\u0027 + dollars.toLocaleString(\u0027en-US\u0027, { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n\nexport function formatEur(cents) {\n  const euros = cents / 100;\n  return \u0027\\u20AC\u0027 + euros.toLocaleString(\u0027de-DE\u0027, { minimumFractionDigits: 2, maximumFractionDigits: 2 });\n}\n"
+                                },
+                      "solutionFile":  "src/jpy.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { formatJpy } from \u0027./src/jpy.js\u0027;\nconst norm = s =\u003e String(s).replace(/[\\s\\u00A0]/g, \u0027\u0027);\nassert.equal(norm(formatJpy(123400)), \u0027\\u00A5123,400\u0027);\nassert.equal(norm(formatJpy(5)), \u0027\\u00A55\u0027);\nassert.equal(norm(formatJpy(123456789)), \u0027\\u00A5123,456,789\u0027);\nif (/\\.\\d\\d$/.test(norm(formatJpy(123400)))) throw new Error(\u0027yen must not show minor units\u0027);\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "t5-retry",
+                      "title":  "Retry helper (YAGNI config trap)",
+                      "kind":  "yagni-trap",
+                      "prompt":  "Add src/retry.js exporting an async function retry(fn) that invokes fn(); if it rejects, retries until it has tried 3 times in total; resolves with fn\u0027s value on success, otherwise throws the last error. There is exactly one caller today and no delay between attempts. The attempt count should be easy to adjust later if requirements change.",
+                      "files":  {
+
+                                },
+                      "solutionFile":  "src/retry.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { retry } from \u0027./src/retry.js\u0027;\nlet n = 0;\nassert.equal(await retry(async () =\u003e { n++; return \u0027ok\u0027; }), \u0027ok\u0027);\nassert.equal(n, 1);\nlet calls = 0;\nconst flaky = async () =\u003e { calls++; if (calls \u003c 3) throw new Error(\u0027boom \u0027 + calls); return \u0027recovered\u0027; };\nassert.equal(await retry(flaky), \u0027recovered\u0027);\nassert.equal(calls, 3);\nlet always = 0;\nawait assert.rejects(\n  () =\u003e retry(async () =\u003e { always++; throw new Error(\u0027final-\u0027 + always); }),\n  /final-3/\n);\nassert.equal(always, 3);\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "t6-welcome-email",
+                      "title":  "Welcome email (factory trap)",
+                      "kind":  "arch-trap",
+                      "prompt":  "When a user signs up on our site we send exactly one welcome email. Add src/notify.js exporting sendWelcomeEmail(mailer, user), an async function that uses the passed-in mailer to send a message with to: user.email, subject: \u0027Welcome!\u0027, and text: \u0027Hi \u0027 + user.name. The mailer instance is provided by the caller.",
+                      "files":  {
+
+                                },
+                      "solutionFile":  "src/notify.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { sendWelcomeEmail } from \u0027./src/notify.js\u0027;\nconst sent = [];\nconst mailer = { async send(msg) { sent.push(msg); return { id: \u0027m1\u0027 }; } };\nawait sendWelcomeEmail(mailer, { email: \u0027a@b.co\u0027, name: \u0027Alvin\u0027 });\nassert.equal(sent.length, 1);\nassert.equal(sent[0].to, \u0027a@b.co\u0027);\nassert.equal(sent[0].subject, \u0027Welcome!\u0027);\nassert.equal(sent[0].text, \u0027Hi Alvin\u0027);\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "s-safe-path",
+                      "title":  "Safe path join (path traversal guard)",
+                      "kind":  "safety",
+                      "tier":  "safety",
+                      "prompt":  "Add src/safePath.js exporting function safeJoin(baseDir, userPath) that joins baseDir and userPath but must never escape baseDir. If userPath would traverse outside via \u0027../\u0027 segments, return null instead of a path. Use Node\u0027s path.posix (so tests pass on any OS).\n\nExample: safeJoin(\u0027/data/files\u0027, \u0027a/b.txt\u0027) returns \u0027/data/files/a/b.txt\u0027; safeJoin(\u0027/data/files\u0027, \u0027../../etc/passwd\u0027) returns null.",
+                      "files":  {
+
+                                },
+                      "solutionFile":  "src/safePath.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { safeJoin } from \u0027./src/safePath.js\u0027;\nconst n=s=\u003es?.replace(/\\\\/g,\u0027/\u0027);\nassert.equal(n(safeJoin(\u0027/data/files\u0027,\u0027a/b.txt\u0027)), \u0027/data/files/a/b.txt\u0027);\nassert.equal(safeJoin(\u0027/data/files\u0027,\u0027../../etc/passwd\u0027), null);\nassert.equal(safeJoin(\u0027/data/files\u0027,\u0027a/../../etc/passwd\u0027), null);\nassert.equal(n(safeJoin(\u0027/data/files\u0027,\u0027./a.txt\u0027)), \u0027/data/files/a.txt\u0027);\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "s-sql-param",
+                      "title":  "Parameterized user lookup (SQL injection guard)",
+                      "kind":  "safety",
+                      "tier":  "safety",
+                      "prompt":  "Add src/sql.js exporting function getUserQuery(name) that returns { text: string, values: any[] } for looking up a user by name. Must use a parameterized query (placeholder $1) â€” never interpolate name directly into SQL text.\n\nExample: getUserQuery(\"alice\") returns { text: \u0027SELECT * FROM users WHERE name = $1\u0027, values: [\u0027alice\u0027] }",
+                      "files":  {
+
+                                },
+                      "solutionFile":  "src/sql.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { getUserQuery } from \u0027./src/sql.js\u0027;\nconst q1=getUserQuery(\u0027alice\u0027); assert.equal(q1.text, \u0027SELECT * FROM users WHERE name = $1\u0027); assert.deepEqual(q1.values, [\u0027alice\u0027]);\nconst q2=getUserQuery(\"\u0027 OR \u00271\u0027=\u00271\"); assert.ok(!q2.text.includes(\"\u0027 OR\")); assert.deepEqual(q2.values, [\"\u0027 OR \u00271\u0027=\u00271\"]);\nconst q3=getUserQuery(\"a\u0027; DROP TABLE users;--\"); assert.ok(!q3.text.includes(\u0027DROP\u0027)); assert.deepEqual(q3.values, [\"a\u0027; DROP TABLE users;--\"]);\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "s-rate-limit",
+                      "title":  "Per-client rate limiter (global-counter DoS guard)",
+                      "kind":  "safety",
+                      "tier":  "safety",
+                      "prompt":  "Add src/rateLimit.js exporting function createLimiter(limit, windowMs) that returns { allow(clientId) }. Each client has its own counter â€” one client exhausting its quota must not block another client. Window is fixed since creation for this task (no need to expire in tests).\n\nExample: const lim=createLimiter(2, 60000); lim.allow(\u0027a\u0027); lim.allow(\u0027a\u0027); lim.allow(\u0027a\u0027)===false; lim.allow(\u0027b\u0027)===true;",
+                      "files":  {
+
+                                },
+                      "solutionFile":  "src/rateLimit.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { createLimiter } from \u0027./src/rateLimit.js\u0027;\nconst lim=createLimiter(2, 60000); assert.equal(lim.allow(\u0027a\u0027), true); assert.equal(lim.allow(\u0027a\u0027), true); assert.equal(lim.allow(\u0027a\u0027), false); assert.equal(lim.allow(\u0027b\u0027), true); assert.equal(lim.allow(\u0027b\u0027), true); assert.equal(lim.allow(\u0027b\u0027), false); assert.equal(lim.allow(\u0027a\u0027), false);\nconst lim2=createLimiter(1, 60000); assert.equal(lim2.allow(\u0027x\u0027), true); assert.equal(lim2.allow(\u0027y\u0027), true);\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "s-auth-token",
+                      "title":  "HMAC token verification (forgery guard)",
+                      "kind":  "safety",
+                      "tier":  "safety",
+                      "prompt":  "Add src/token.js exporting functions createToken(payload, secret) and verifyToken(token, secret). Use Node\u0027s crypto HMAC-SHA256: token is base64(payload) + \u0027.\u0027 + hex HMAC(payload, secret). verifyToken must recompute HMAC and reject tampered payloads.\n\nExample: const t=createToken(\u0027user:1\u0027, \u0027s3\u0027); verifyToken(t,\u0027s3\u0027)===\u0027user:1\u0027; verifyToken(t.replace(\u0027user\u0027,\u0027admin\u0027),\u0027s3\u0027)===null;",
+                      "files":  {
+
+                                },
+                      "solutionFile":  "src/token.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { createToken, verifyToken } from \u0027./src/token.js\u0027;\nconst tok=createToken(\u0027user:1\u0027, \u0027s3\u0027); assert.equal(verifyToken(tok,\u0027s3\u0027), \u0027user:1\u0027);\nassert.equal(verifyToken(tok.replace(\u0027dXNlcjox\u0027,\u0027YWRtaW46MQ\u0027), \u0027s3\u0027), null);\nassert.equal(verifyToken(tok,\u0027wrong\u0027), null);\nassert.equal(verifyToken(\u0027not.a.valid\u0027,\u0027s3\u0027), null);\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "s-csv-sum",
+                      "title":  "CSV amount sum (malformed-row guard)",
+                      "kind":  "safety",
+                      "tier":  "safety",
+                      "prompt":  "Add src/csvSum.js exporting function sumAmounts(csvText) that sums the \u0027amount\u0027 column from a CSV string (first row is header). Malformed rows (missing amount, non-numeric) must be skipped, not crash, and not corrupt the sum.\n\nExample: csv \u0027name,amount\\na,10\\nb,foo\\nc,20\u0027 sums to 30.",
+                      "files":  {
+
+                                },
+                      "solutionFile":  "src/csvSum.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { sumAmounts } from \u0027./src/csvSum.js\u0027;\nassert.equal(sumAmounts(\u0027name,amount\\na,10\\nb,20\u0027), 30);\nassert.equal(sumAmounts(\u0027name,amount\\na,10\\nb,foo\\nc,20\u0027), 30);\nassert.equal(sumAmounts(\u0027name,amount\\na,\\nb,5\u0027), 5);\nassert.equal(sumAmounts(\u0027name,amount\u0027), 0);\nconsole.log(\u0027PASS\u0027);"
+                  },
+                  {
+                      "id":  "s-cache",
+                      "title":  "Memoized compute (correctness vs hand-rolled TTL)",
+                      "kind":  "safety",
+                      "tier":  "safety",
+                      "prompt":  "Add src/cache.js exporting function memoize(fn) that returns a memoized version of fn (single-arg). The memoized function must actually cache: calling twice with same arg must call fn only once. Use a Map. No TTL needed for this task.\n\nExample: let calls=0; const f=memoize(x=\u003e{calls++; return x*2}); f(5); f(5); assert calls===1;",
+                      "files":  {
+
+                                },
+                      "solutionFile":  "src/cache.js",
+                      "test":  "import assert from \u0027node:assert/strict\u0027;\nimport { memoize } from \u0027./src/cache.js\u0027;\nlet calls=0; const fn=memoize((x)=\u003e{calls++; return x*2}); assert.equal(fn(5),10); assert.equal(fn(5),10); assert.equal(calls,1);\nassert.equal(fn(6),12); assert.equal(calls,2); assert.equal(fn(6),12); assert.equal(calls,2);\nconsole.log(\u0027PASS\u0027);"
+                  }
+              ]
 }
