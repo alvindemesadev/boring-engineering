@@ -59,10 +59,11 @@ foreach($ticket in $TICKETS){
       $p=Start-Process cmd.exe -ArgumentList '/d','/s','/c',"`"$runner`"" -PassThru -WindowStyle Hidden -WorkingDirectory $ws
       Wait-Process -Id $p.Id -Timeout $CallTimeoutSec -ErrorAction SilentlyContinue
       if(-not $p.HasExited){ taskkill /PID $p.Id /T /F 2>&1 | Out-Null }
-      # score git diff
-      $added=(git diff --numstat | ForEach-Object { [int]($_ -split "`t")[0] } | Measure-Object -Sum).Sum
+      # score git diff — count src/ changes (new files are untracked, so stage src/ first)
+      git add src/ 2>$null | Out-Null
+      $added=(git diff --cached --numstat HEAD -- src/ | ForEach-Object { [int]($_ -split "`t")[0] } | Measure-Object -Sum).Sum
       if($null -eq $added){ $added=0 }
-      $diff=git diff --stat
+      $diff=git diff --cached --stat HEAD -- src/
       # write score
       $score=@{ key=$key; arm=$arm.id; task=$ticket.id; run=$r; loc_added=$added; diff_stat=$diff; model=$Model } | ConvertTo-Json -Compress
       $score | Add-Content (Join-Path $STAMP_DIR "_scores.jsonl") -Encoding UTF8
