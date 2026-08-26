@@ -265,24 +265,21 @@ Avoid meaningful duplication — but prefer duplication over a premature abstrac
 
 ---
 
-## Benchmark — v1.1 (12 tickets × 5 arms × 5 tries)
+## Benchmark — v1.1 (12 tickets × 5 arms × 5 tries) — **fresh unbiased GO, 300/300**
 
-Honest 2-tier design inspired by ponytail's [agentic benchmark](https://github.com/DietrichGebert/ponytail/blob/main/benchmarks/results/2026-06-18-agentic.md) — not a copy, same rigor (real file to reuse, 5 arms, fresh sandbox per cell, `n=5`).
+Honest 2-tier design inspired by ponytail's [agentic benchmark](https://github.com/DietrichGebert/ponytail/blob/main/benchmarks/results/2026-06-18-agentic.md) — not a copy, same rigor (real file to reuse, 5 arms, fresh sandbox per cell, `n=5`). This is the **unbiased 300-cell re-run** on `opencode-go/muse-spark-1.2-contributor` (GO plan) — fully interleaved, no additive bias, no throttling.
 
-**Tier S — generation (single-shot, 6 LOC tickets + 6 safety surgical):** `muse-spark-1.2-contributor-free`, block lines + `node test.mjs` + adversarial execution.
+| vs baseline (300 runs, GO) | LOC | Tokens | Correct |
+|---|--:|--:|--:|
+| **boring v1.1** | **-36%** (14 → 9) | **-41%** | **98%** (59/60) |
+| ponytail | -50% (14 → 7) | -23% | 78% |
+| yagni-1liner | **-86%** (14 → 2) | -22% | 73% |
+| caveman | -21% (14 → 11) | -41% | 65% |
+| baseline | — | — | 37% |
 
-| vs baseline (n=5) | LOC | Tokens | Correct | Safe* |
-|---|--:|--:|--:|--:|
-| **boring v1.1** | **-28%** (12.5 → 9) | **-22%** | **92%** / **90% safe** | — |
-| ponytail | -57% (12.5 → 5) | -11% | 72% / 50% | — |
-| yagni-1liner | **-84%** (12.5 → 2) | -19% | 61% / 54% | tiniest, least correct |
-| baseline | — | — | 41% / 18% | — |
+**Safety (6 tasks, 30 runs/arm, GO):** boring **97% safe (29/30)** vs ponytail 63% vs yagni 57% vs caveman 44% vs baseline 30% — the guards yagni/ponytail cut on `auth-token`/`safe-path` are the lines boring keeps. Full per-task tables, setup, and honest limitations → [`benchmarks/results/2026-08-28-boring-v1.1.md`](./benchmarks/results/2026-08-28-boring-v1.1.md).
 
-\* Safe = 5 tasks with signal (one `safe-path` task throttled on free tier, pending rerun; excluded). LOC is block lines for Tier S; Tier A will be `git diff`.
-
-**Reading it:** boring is the only arm that is both meaningfully smaller *and* the most correct/safe — the guards yagni/ponytail cut on `auth-token`/`rate-limit` are the lines boring keeps. Full per-task tables, setup, and limitations → [`benchmarks/results/2026-08-28-boring-v1.1.md`](./benchmarks/results/2026-08-28-boring-v1.1.md).
-
-**Tier A — agentic (real repo + `git diff`)** is scaffolded in [`benchmarks/agentic/`](./benchmarks/agentic/) and will become the headline when it lands. Single-shot is cheap; agentic is honest.
+**Tier A — agentic (`git diff` on real repo)** is scaffolded in [`benchmarks/agentic/`](./benchmarks/agentic/) and will replace this headline when it lands. Tier S is generation size; Tier A is diff size.
 
 ---
 
