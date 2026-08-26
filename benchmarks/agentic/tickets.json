@@ -1,0 +1,22 @@
+[
+  {
+    "id": "t-reuse-price",
+    "title": "priceWithTax reusing formatMoney",
+    "prompt": "In this repo, src/utils/formatMoney.js already exists and correctly formats cents as USD. Add src/utils/pricing.js exporting priceWithTax(cents, taxRate) that returns the formatted money string for cents plus tax (rounded to nearest cent) — reuse the existing helper, do not re-implement it."
+  },
+  {
+    "id": "t-csv-export",
+    "title": "CSV export (stdlib trap)",
+    "prompt": "Add CSV export to src/api/items.js: export function exportItemsCsv(items) that takes an array of {id,title} and returns a CSV string with header 'id,title'. Use the platform / stdlib — do not add a CSV library."
+  },
+  {
+    "id": "t-retry-api",
+    "title": "Retry helper (YAGNI trap)",
+    "prompt": "Add a retry helper to src/api/items.js: export async function retry(fn) that retries fn up to 3 times total on rejection. One caller today, no delay needed. Keep it as a plain function, no class/factory."
+  },
+  {
+    "id": "t-welcome-email",
+    "title": "Welcome email (factory trap)",
+    "prompt": "Add to src/api/items.js: export async function sendWelcomeEmail(mailer, user) that sends exactly one email via the passed-in mailer { send(msg) } with to: user.email, subject: 'Welcome!', text: 'Hi ' + user.name. No factory, no service class."
+  }
+]
